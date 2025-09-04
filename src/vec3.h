@@ -4,59 +4,16 @@
 
 class vec3 {
 public:
-    double x, y, z;
+    double e[3];
 
-    vec3() {
-        x = y = z = 0.0;
-    }
+    vec3() : e{0,0,0} {}
+    vec3(double e0, double e1, double e2) : e{e0,e1,e2} {}
 
-    vec3(double a, double b, double c) {
-        x = a;
-        y = b;
-        z = c;
-    }
-
-    double length() const {
-        return std::sqrt(x * x + y * y + z * z);
-    }
-
-    vec3 add(const vec3& v) const {
-        return vec3(x + v.x, y + v.y, z + v.z);
-    }
-
-    vec3 subtract(const vec3& v) const {
-        return vec3(x - v.x, y - v.y, z - v.z);
-    }
-
-    double dot(const vec3& v) const {
-        return x * v.x + y * v.y + z * v.z;
-    }
-
-    vec3 operator+(const vec3& v) const {
-        return add(v);
-    }
-
-    vec3 operator-(const vec3& v) const {
-        return subtract(v);
-    }
-
-    vec3 operator*(double scalar) const {
-        return vec3(x * scalar, y * scalar, z * scalar);
-    }
-
-    vec3 operator/(double scalar) const {
-        return vec3(x / scalar, y / scalar, z / scalar);
-    }
-
-    vec3 cross(const vec3& v) const {
-        return vec3(
-            y * v.z - z * v.y,
-            z * v.x - x * v.z,
-            x * v.y - y * v.x
-        );
-    }
-
-    void print() const {
-        std::cout << x << " " << y << " " << z << "\n";
-    }
+    double x() const { return e[0]; }
+    double y() const { return e[1]; }
+    double z() const { return e[2]; }
 };
+
+inline std::ostream& operator<<(std::ostream& out, const vec3& v) {
+    return out << v.e[0] << ' ' << v.e[1] << ' ' << v.e[2];
+}
