@@ -3,6 +3,7 @@
 #include"vec3.h"
 #include"color.h"
 #include"ray.h"
+#include"rtweekend.h"
 
 double hit_sphere(const point3& center, double radius, const ray& r) {
     vec3 oc = r.origin() - center;
@@ -31,6 +32,7 @@ int main() {
     const double aspect_ratio = 16.0 / 9.0;
     const int image_width = 400;
     const int image_height = static_cast<int>(image_width / aspect_ratio);
+    const int samples_per_pixel = 500;
 
     double viewport_height = 2.0;
     double viewport_width  = aspect_ratio * viewport_height;
@@ -45,11 +47,14 @@ int main() {
 
     for (int j = image_height-1; j >= 0; --j) {
         for (int i = 0; i < image_width; ++i) {
-            double u = double(i) / (image_width  - 1);
-            double v = double(j) / (image_height - 1);
-            ray r(origin, lower_left_corner + u*horizontal + v*vertical - origin);
-            color pixel = ray_color(r);
-            write_color(std::cout, pixel);
+            color pixel_color(0,0,0);
+            for (int s = 0; s < samples_per_pixel; ++s) {
+                double u = (i + random_double()) / (image_width  - 1);
+                double v = (j + random_double()) / (image_height - 1);
+                ray r(origin, lower_left_corner + u*horizontal + v*vertical - origin);
+                pixel_color += ray_color(r);
+            }
+            write_color(std::cout, pixel_color, samples_per_pixel);
         }
     }
 }
