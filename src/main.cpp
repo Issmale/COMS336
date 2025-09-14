@@ -15,12 +15,17 @@ double hit_sphere(const point3& center, double radius, const ray& r) {
     return (-half_b - std::sqrt(discriminant)) / a;
 }
 
-color ray_color(const ray& r) {
+color ray_color(const ray& r, int depth) {
     point3 center(0, 0, -1);
     double t = hit_sphere(center, 0.5, r);
+
+    if (depth <= 0)
+        return color(0,0,0);
+
     if (t > 0.0) {
         vec3 n = unit_vector(r.at(t) - center);
-        return 0.5 * color(n.x()+1, n.y()+1, n.z()+1);
+        point3 target = r.at(t) + n + random_in_unit_sphere();
+        return 0.5 * ray_color(ray(r.at(t), target - r.at(t)), depth-1);
     }
 
     vec3 unit_dir = unit_vector(r.direction());
@@ -28,11 +33,13 @@ color ray_color(const ray& r) {
     return (1.0 - u)*color(1.0, 1.0, 1.0) + u*color(0.5, 0.7, 1.0);
 }
 
+
 int main() {
     const double aspect_ratio = 16.0 / 9.0;
     const int image_width = 400;
     const int image_height = static_cast<int>(image_width / aspect_ratio);
     const int samples_per_pixel = 500;
+    const int max_depth = 50;
 
     double viewport_height = 2.0;
     double viewport_width  = aspect_ratio * viewport_height;
@@ -52,7 +59,7 @@ int main() {
                 double u = (i + random_double()) / (image_width  - 1);
                 double v = (j + random_double()) / (image_height - 1);
                 ray r(origin, lower_left_corner + u*horizontal + v*vertical - origin);
-                pixel_color += ray_color(r);
+                pixel_color += ray_color(r, max_depth);
             }
             write_color(std::cout, pixel_color, samples_per_pixel);
         }
