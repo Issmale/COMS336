@@ -1,11 +1,12 @@
 #include <iostream>
 #include <cmath>
-#include"vec3.h"
-#include"color.h"
-#include"ray.h"
-#include"rtweekend.h"
+#include "vec3.h"
+#include "color.h"
+#include "ray.h"
+#include "rtweekend.h"
 #include "hittable_list.h"
 #include "sphere.h"
+#include "camera.h"
 
 color ray_color(const ray& r, const hittable& world, int depth) {
     hit_record rec;
@@ -34,14 +35,11 @@ int main() {
     world.add(std::make_shared<sphere>(point3(0,0,-1), 0.5));
     world.add(std::make_shared<sphere>(point3(0,-100.5,-1), 100));
 
-    double viewport_height = 2.0;
-    double viewport_width  = aspect_ratio * viewport_height;
-    double focal_length    = 1.0;
-
-    point3 origin(0,0,0);
-    vec3 horizontal(viewport_width, 0, 0);
-    vec3 vertical(0, viewport_height, 0);
-    point3 lower_left_corner = origin - horizontal/2 - vertical/2 - vec3(0,0,focal_length);
+    point3 lookfrom(0,0,0);
+    point3 lookat(0,0,-1);
+    vec3 vup(0,1,0);
+    double vfov = 90.0;
+    camera cam(lookfrom, lookat, vup, vfov, aspect_ratio);
 
     std::cout << "P3\n" << image_width << ' ' << image_height << "\n255\n";
 
@@ -51,7 +49,7 @@ int main() {
             for (int s = 0; s < samples_per_pixel; ++s) {
                 double u = (i + random_double()) / (image_width  - 1);
                 double v = (j + random_double()) / (image_height - 1);
-                ray r(origin, lower_left_corner + u*horizontal + v*vertical - origin);
+                ray r = cam.get_ray(u, v);
                 pixel_color += ray_color(r, world, max_depth);
             }
             write_color(std::cout, pixel_color, samples_per_pixel);
