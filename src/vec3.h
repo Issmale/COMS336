@@ -23,6 +23,11 @@ public:
 
     double length() const { return std::sqrt(length_squared()); }
     double length_squared() const { return e[0]*e[0]+e[1]*e[1]+e[2]*e[2]; }
+
+    bool near_zero() const {
+        const auto s = 1e-8;
+        return (std::fabs(e[0]) < s) && (std::fabs(e[1]) < s) && (std::fabs(e[2]) < s);
+    }
 };
 
 using point3 = vec3;
@@ -59,4 +64,19 @@ inline vec3 operator*(const vec3& u, const vec3& v) {
 }
 inline vec3 unit_vector(vec3 v) {
     return v / v.length();
+}
+inline vec3 reflect(const vec3& v, const vec3& n) {
+    return v - 2 * dot(v, n) * n;
+}
+
+inline bool refract(const vec3& uv, const vec3& n, double etai_over_etat, vec3& refracted) {
+    auto cos_theta = fmin(dot(-uv, n), 1.0);
+    vec3 r_out_perp = etai_over_etat * (uv + cos_theta * n);
+    double k = 1.0 - r_out_perp.length_squared();
+    if (k < 0.0) {
+        return false;
+    }
+    vec3 r_out_parallel = -std::sqrt(k) * n;
+    refracted = r_out_perp + r_out_parallel;
+    return true;
 }

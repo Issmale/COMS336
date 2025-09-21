@@ -3,6 +3,7 @@
 #include <limits>
 #include <memory>
 #include <random>
+#include "vec3.h"
 
 const double infinity = std::numeric_limits<double>::infinity();
 const double pi = 3.1415926535897932385;
@@ -25,4 +26,8 @@ inline vec3 random_in_unit_sphere() {
         if (p.length_squared() >= 1) continue;
         return p;
     }
+}
+
+inline vec3 random_unit_vector() {
+    return unit_vector(random_in_unit_sphere());
 }
