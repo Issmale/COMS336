@@ -30,9 +30,19 @@ public:
 
         rec.t = root;
         rec.p = r.at(rec.t);
+        get_sphere_uv(rec.normal, rec.u, rec.v);
         vec3 outward_normal = (rec.p - center) / radius;
         rec.set_face_normal(r, outward_normal);
         rec.mat_ptr = mat_ptr;
         return true;
     }
+    private:
+    static void get_sphere_uv(const point3& p, double& u, double& v) {
+        auto theta = acos(-p.y());
+        auto phi = atan2(-p.z(), p.x()) + pi;
+
+        u = phi / (2*pi);
+        v = theta / pi;
+    }
+
 };
