@@ -11,7 +11,9 @@
 #include "lambertian.h"
 #include "metal.h"
 #include "dielectric.h"
-#include "triangle.h"  
+#include "triangle.h"
+#include "solid_color.h"
+#include "checker_texture.h"
 
 color ray_color(const ray& r, const hittable& world, int depth) {
     hit_record rec;
@@ -43,7 +45,12 @@ int main() {
     const int samples_per_pixel = 100;
     const int max_depth = 50;
 
-    auto ground_mat   = std::make_shared<lambertian>(color(0.8, 0.8, 0.0));
+    auto checker = std::make_shared<checker_texture>(
+        color(0.2, 0.3, 0.1), 
+        color(0.9, 0.9, 0.9)
+    );
+
+    auto ground_mat   = std::make_shared<lambertian>(checker);
     auto center_mat   = std::make_shared<lambertian>(color(0.1, 0.2, 0.5));
     auto glass_mat    = std::make_shared<dielectric>(1.5);
     auto metal_mat    = std::make_shared<metal>(color(0.8, 0.6, 0.2), 0.0);
