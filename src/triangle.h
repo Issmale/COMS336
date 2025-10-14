@@ -1,58 +1,54 @@
 #pragma once
 #include "hittable.h"
 #include "vec3.h"
+#include "vec2.h"
 
 class triangle : public hittable {
 public:
     triangle() {}
 
     triangle(const point3& a, const point3& b, const point3& c,
-             std::shared_ptr<material> material)
-        : v0(a), v1(b), v2(c), mat_ptr(material) {}
+             const vec2& ta, const vec2& tb, const vec2& tc,
+             std::shared_ptr<material> m)
+        : v0(a), v1(b), v2(c), uv0(ta), uv1(tb), uv2(tc), mat_ptr(m) {}
 
-    virtual bool hit(const ray& r, double t_min, double t_max, hit_record& rec) const override {
-        const double EPS = 1e-8;
+    triangle(const point3& a, const point3& b, const point3& c,
+             std::shared_ptr<material> m)
+        : v0(a), v1(b), v2(c),
+          uv0(vec2(0,0)), uv1(vec2(1,0)), uv2(vec2(0,1)), mat_ptr(m) {}
 
-        vec3 edge1 = v1 - v0;
-        vec3 edge2 = v2 - v0;
-
-        vec3 pvec = cross(r.direction(), edge2);
-        double det = dot(edge1, pvec);
-
-        if (fabs(det) < EPS) {
-            return false;
-        }
-
+    bool hit(const ray& r, double t_min, double t_max, hit_record& rec) const override {
+        const double eps = 1e-8;
+        vec3 e1 = v1 - v0;
+        vec3 e2 = v2 - v0;
+        vec3 p = cross(r.direction(), e2);
+        double det = dot(e1, p);
+        if (fabs(det) < eps) return false;
         double invDet = 1.0 / det;
 
-        vec3 tvec = r.origin() - v0;
+        vec3 t = r.origin() - v0;
+        double u = dot(t, p) * invDet;
+        if (u < 0.0 || u > 1.0) return false;
 
-        double u = dot(tvec, pvec) * invDet;
-        if (u < 0.0 || u > 1.0) {
-            return false;
-        }
+        vec3 q = cross(t, e1);
+        double v = dot(r.direction(), q) * invDet;
+        if (v < 0.0 || u + v > 1.0) return false;
 
-        vec3 qvec = cross(tvec, edge1);
-        double v = dot(r.direction(), qvec) * invDet;
-        if (v < 0.0 || (u + v) > 1.0) {
-            return false;
-        }
+        double t_hit = dot(e2, q) * invDet;
+        if (t_hit < t_min || t_hit > t_max) return false;
 
-        double t = dot(edge2, qvec) * invDet;
-        if (t < t_min || t > t_max) {
-            return false;
-        }
-
-        rec.t = t;
-        rec.p = r.at(t);
-        vec3 normal = unit_vector(cross(edge1, edge2));
-        rec.set_face_normal(r, normal);
+        rec.t = t_hit;
+        rec.p = r.at(t_hit);
+        vec3 n = unit_vector(cross(e1, e2));
+        rec.set_face_normal(r, n);
         rec.mat_ptr = mat_ptr;
-
+        rec.u = uv0.x() * (1 - u - v) + uv1.x() * u + uv2.x() * v;
+        rec.v = uv0.y() * (1 - u - v) + uv1.y() * u + uv2.y() * v;
         return true;
     }
 
 private:
     point3 v0, v1, v2;
+    vec2 uv0, uv1, uv2;
     std::shared_ptr<material> mat_ptr;
 };
