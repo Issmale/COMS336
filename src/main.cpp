@@ -15,6 +15,7 @@
 #include "solid_color.h"
 #include "checker_texture.h"
 #include "image_texture.h"
+#include "obj_loader.h"
 
 color ray_color(const ray& r, const hittable& world, int depth) {
     hit_record rec;
@@ -60,13 +61,18 @@ int main() {
     world.add(std::make_shared<sphere>(point3(-1, 0, -1), -0.45, glass_mat));
     world.add(std::make_shared<sphere>(point3(1, 0, -1), 0.5, metal_mat));
 
-    world.add(std::make_shared<triangle>(
-        point3(-0.75, 0.25, -0.5),
-        point3(0.75, 0.25, -0.5),
-        point3(0.0, 1.0, -1.0),
-        vec2(0, 0), vec2(1, 0), vec2(0.5, 1),
-        tri_mat
-    ));
+    const std::string obj_path = "../src/models/cube.obj";
+    int loaded_triangles = load_obj_as_triangles(obj_path, world, tri_mat);
+    std::cerr << "Loaded triangles from OBJ: " << loaded_triangles << " (path: " << obj_path << ")\n";
+    if (loaded_triangles == 0) {
+        world.add(std::make_shared<triangle>(
+            point3(-0.75,0.25,-0.5),
+            point3(0.75,0.25,-0.5),
+            point3(0.0,1.0,-1.0),
+            vec2(0,0), vec2(1,0), vec2(0.5,1),
+            tri_mat
+        ));
+    }    
 
     point3 lookfrom(3, 3, 2);
     point3 lookat(0, 0, -1);
