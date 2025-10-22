@@ -6,4 +6,5 @@ set(CMAKE_CXX_STANDARD 17)
 add_executable(raytracer 
     src/main.cpp
     src/stb_image.cpp
+    src/obj_loader.cpp
 )

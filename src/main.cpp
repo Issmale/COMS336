@@ -16,6 +16,7 @@
 #include "checker_texture.h"
 #include "image_texture.h"
 #include "obj_loader.h"
+#include "emissive.h"
 
 color ray_color(const ray& r, const hittable& world, int depth) {
     hit_record rec;
@@ -26,9 +27,12 @@ color ray_color(const ray& r, const hittable& world, int depth) {
     if (world.hit(r, 0.001, infinity, rec)) {
         ray scattered;
         color attenuation;
+        color emitted = rec.mat_ptr->emitted();
+
+
         if (rec.mat_ptr->scatter(r, rec, attenuation, scattered))
-            return attenuation * ray_color(scattered, world, depth - 1);
-        return color(0, 0, 0);
+            return emitted + attenuation * ray_color(scattered, world, depth - 1);
+        return emitted;
     }
 
     vec3 unit_dir = unit_vector(r.direction());
@@ -74,6 +78,9 @@ int main() {
         ));
     }    
 
+    auto light_mat = std::make_shared<emissive>(color(4, 4, 4)); 
+    world.add(std::make_shared<sphere>(point3(0, 2, 0), 0.5, light_mat)); 
+
     point3 lookfrom(3, 3, 2);
     point3 lookat(0, 0, -1);
     vec3 vup(0, 1, 0);
@@ -95,6 +102,5 @@ int main() {
             write_color(std::cout, pixel_color, samples_per_pixel);
         }
     }
-
     std::cerr << "\nDone.\n";
 }
