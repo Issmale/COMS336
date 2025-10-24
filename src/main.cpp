@@ -17,6 +17,7 @@
 #include "image_texture.h"
 #include "obj_loader.h"
 #include "emissive.h"
+#include "bvh.h"
 
 color ray_color(const ray& r, const hittable& world, int depth) {
     hit_record rec;
@@ -28,7 +29,6 @@ color ray_color(const ray& r, const hittable& world, int depth) {
         ray scattered;
         color attenuation;
         color emitted = rec.mat_ptr->emitted();
-
 
         if (rec.mat_ptr->scatter(r, rec, attenuation, scattered))
             return emitted + attenuation * ray_color(scattered, world, depth - 1);
@@ -81,6 +81,8 @@ int main() {
     auto light_mat = std::make_shared<emissive>(color(4, 4, 4)); 
     world.add(std::make_shared<sphere>(point3(0, 2, 0), 0.5, light_mat)); 
 
+    bvh_node bvh_tree(world);
+
     point3 lookfrom(3, 3, 2);
     point3 lookat(0, 0, -1);
     vec3 vup(0, 1, 0);
@@ -97,7 +99,7 @@ int main() {
                 double u = (i + random_double()) / (image_width - 1);
                 double v = (j + random_double()) / (image_height - 1);
                 ray r = cam.get_ray(u, v);
-                pixel_color += ray_color(r, world, max_depth);
+                pixel_color += ray_color(r, bvh_tree, max_depth); 
             }
             write_color(std::cout, pixel_color, samples_per_pixel);
         }

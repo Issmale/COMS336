@@ -31,3 +31,7 @@ inline vec3 random_in_unit_sphere() {
 inline vec3 random_unit_vector() {
     return unit_vector(random_in_unit_sphere());
 }
+
+inline int random_int(int min, int max) {
+    return static_cast<int>(random_double(min, max+1));
+}

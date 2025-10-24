@@ -47,6 +47,23 @@ public:
         return true;
     }
 
+    virtual bool bounding_box(aabb& output_box) const override {
+        const double epsilon = 0.0001;
+        
+        point3 min_pt(
+            fmin(fmin(v0.x(), v1.x()), v2.x()) - epsilon,
+            fmin(fmin(v0.y(), v1.y()), v2.y()) - epsilon,
+            fmin(fmin(v0.z(), v1.z()), v2.z()) - epsilon
+        );
+        point3 max_pt(
+            fmax(fmax(v0.x(), v1.x()), v2.x()) + epsilon,
+            fmax(fmax(v0.y(), v1.y()), v2.y()) + epsilon,
+            fmax(fmax(v0.z(), v1.z()), v2.z()) + epsilon
+        );
+        output_box = aabb(min_pt, max_pt);
+        return true;
+    }     
+
 private:
     point3 v0, v1, v2;
     vec2 uv0, uv1, uv2;
