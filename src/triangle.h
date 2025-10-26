@@ -9,13 +9,28 @@ public:
 
     triangle(const point3& a, const point3& b, const point3& c,
              const vec2& ta, const vec2& tb, const vec2& tc,
+             const vec3& na, const vec3& nb, const vec3& nc,
              std::shared_ptr<material> m)
-        : v0(a), v1(b), v2(c), uv0(ta), uv1(tb), uv2(tc), mat_ptr(m) {}
+        : v0(a), v1(b), v2(c), 
+          uv0(ta), uv1(tb), uv2(tc),
+          n0(na), n1(nb), n2(nc), 
+          has_normals(true),  
+          mat_ptr(m) {}
+
+    triangle(const point3& a, const point3& b, const point3& c,
+             const vec2& ta, const vec2& tb, const vec2& tc,
+             std::shared_ptr<material> m)
+        : v0(a), v1(b), v2(c),
+          uv0(ta), uv1(tb), uv2(tc),
+          has_normals(false), 
+          mat_ptr(m) {}
 
     triangle(const point3& a, const point3& b, const point3& c,
              std::shared_ptr<material> m)
         : v0(a), v1(b), v2(c),
-          uv0(vec2(0,0)), uv1(vec2(1,0)), uv2(vec2(0,1)), mat_ptr(m) {}
+          uv0(vec2(0,0)), uv1(vec2(1,0)), uv2(vec2(0,1)),
+          has_normals(false),
+          mat_ptr(m) {}
 
     bool hit(const ray& r, double t_min, double t_max, hit_record& rec) const override {
         const double eps = 1e-8;
@@ -39,8 +54,15 @@ public:
 
         rec.t = t_hit;
         rec.p = r.at(t_hit);
-        vec3 n = unit_vector(cross(e1, e2));
-        rec.set_face_normal(r, n);
+        
+        vec3 normal;
+        if (has_normals) {
+            normal = unit_vector((1.0 - u - v) * n0 + u * n1 + v * n2);
+        } else {
+            normal = unit_vector(cross(e1, e2));
+        }
+        
+        rec.set_face_normal(r, normal);
         rec.mat_ptr = mat_ptr;
         rec.u = uv0.x() * (1 - u - v) + uv1.x() * u + uv2.x() * v;
         rec.v = uv0.y() * (1 - u - v) + uv1.y() * u + uv2.y() * v;
@@ -67,5 +89,7 @@ public:
 private:
     point3 v0, v1, v2;
     vec2 uv0, uv1, uv2;
+    vec3 n0, n1, n2; 
+    bool has_normals; 
     std::shared_ptr<material> mat_ptr;
 };

@@ -1,5 +1,9 @@
 #include <iostream>
 #include <cmath>
+#include <vector>
+#ifdef _OPENMP
+#include <omp.h> 
+#endif
 #include "vec3.h"
 #include "color.h"
 #include "ray.h"
@@ -89,9 +93,12 @@ int main() {
     double vfov = 20.0;
     camera cam(lookfrom, lookat, vup, vfov, aspect_ratio);
 
+    std::vector<std::vector<color>> framebuffer(image_height, std::vector<color>(image_width));
     std::cout << "P3\n" << image_width << " " << image_height << "\n255\n";
 
+#pragma omp parallel for schedule(dynamic)
     for (int j = image_height - 1; j >= 0; --j) {
+#pragma omp critical
         std::cerr << "\rScanlines remaining: " << j << " " << std::flush;
         for (int i = 0; i < image_width; ++i) {
             color pixel_color(0, 0, 0);
@@ -99,9 +106,15 @@ int main() {
                 double u = (i + random_double()) / (image_width - 1);
                 double v = (j + random_double()) / (image_height - 1);
                 ray r = cam.get_ray(u, v);
-                pixel_color += ray_color(r, bvh_tree, max_depth); 
+                pixel_color += ray_color(r, bvh_tree, max_depth);
             }
-            write_color(std::cout, pixel_color, samples_per_pixel);
+            framebuffer[j][i] = pixel_color; 
+        }
+    }
+
+    for (int j = image_height - 1; j >= 0; --j) {
+        for (int i = 0; i < image_width; ++i) {
+            write_color(std::cout, framebuffer[j][i], samples_per_pixel);
         }
     }
     std::cerr << "\nDone.\n";
