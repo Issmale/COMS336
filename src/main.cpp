@@ -22,6 +22,7 @@
 #include "obj_loader.h"
 #include "emissive.h"
 #include "bvh.h"
+#include "moving_sphere.h"
 
 color ray_color(const ray& r, const hittable& world, int depth) {
     hit_record rec;
@@ -85,13 +86,24 @@ int main() {
     auto light_mat = std::make_shared<emissive>(color(4, 4, 4)); 
     world.add(std::make_shared<sphere>(point3(0, 2, 0), 0.5, light_mat)); 
 
+    auto moving_mat = std::make_shared<lambertian>(color(0.7, 0.3, 0.3));
+    world.add(std::make_shared<moving_sphere>(
+        point3(-0.5, 0.5, -1.0),
+        point3(0.5, 0.5, -1.0),
+        0.0, 1.0,
+        0.25,
+        moving_mat
+    ));
+
     bvh_node bvh_tree(world);
 
     point3 lookfrom(3, 3, 2);
     point3 lookat(0, 0, -1);
     vec3 vup(0, 1, 0);
     double vfov = 20.0;
-    camera cam(lookfrom, lookat, vup, vfov, aspect_ratio);
+    double dist_to_focus = 3.7;
+    double aperture = 0.05;
+    camera cam(lookfrom, lookat, vup, vfov, aspect_ratio, aperture, dist_to_focus);       
 
     std::vector<std::vector<color>> framebuffer(image_height, std::vector<color>(image_width));
     std::cout << "P3\n" << image_width << " " << image_height << "\n255\n";

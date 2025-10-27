@@ -35,3 +35,11 @@ inline vec3 random_unit_vector() {
 inline int random_int(int min, int max) {
     return static_cast<int>(random_double(min, max+1));
 }
+
+inline vec3 random_in_unit_disk() {
+    while (true) {
+        auto p = vec3(random_double(-1,1), random_double(-1,1), 0);
+        if (p.length_squared() < 1)
+            return p;
+    }
+}
