@@ -23,6 +23,8 @@
 #include "emissive.h"
 #include "bvh.h"
 #include "moving_sphere.h"
+#include "perlin.h"
+#include "noise_texture.h"
 
 color ray_color(const ray& r, const hittable& world, int depth) {
     hit_record rec;
@@ -94,6 +96,10 @@ int main() {
         0.25,
         moving_mat
     ));
+
+    auto noise_tex = std::make_shared<noise_texture>(4.0);
+    auto noise_mat = std::make_shared<lambertian>(noise_tex);
+    world.add(std::make_shared<sphere>(point3(1.5, 0.5, -1), 0.5, noise_mat));
 
     bvh_node bvh_tree(world);
 

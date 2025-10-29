@@ -43,3 +43,11 @@ inline vec3 random_in_unit_disk() {
             return p;
     }
 }
+
+inline vec3 random_vec3() {
+    return vec3(random_double(), random_double(), random_double());
+}
+
+inline vec3 random_vec3(double min, double max) {
+    return vec3(random_double(min,max), random_double(min,max), random_double(min,max));
+}
