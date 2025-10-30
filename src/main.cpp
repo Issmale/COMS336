@@ -25,6 +25,7 @@
 #include "moving_sphere.h"
 #include "perlin.h"
 #include "noise_texture.h"
+#include "quad.h"
 
 color ray_color(const ray& r, const hittable& world, int depth) {
     hit_record rec;
@@ -100,6 +101,14 @@ int main() {
     auto noise_tex = std::make_shared<noise_texture>(4.0);
     auto noise_mat = std::make_shared<lambertian>(noise_tex);
     world.add(std::make_shared<sphere>(point3(1.5, 0.5, -1), 0.5, noise_mat));
+
+    auto wall_mat = std::make_shared<lambertian>(color(0.8, 0.2, 0.2));
+    world.add(std::make_shared<quad>(
+        point3(-2, -1, -3),
+        point3(2, 2, -3),
+        wall_mat,
+        2
+    ));
 
     bvh_node bvh_tree(world);
 
