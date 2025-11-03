@@ -1,6 +1,7 @@
 #include <iostream>
 #include <cmath>
 #include <vector>
+#include <fstream>
 #ifdef _OPENMP
 #include <omp.h> 
 #endif
@@ -46,6 +47,20 @@ color ray_color(const ray& r, const hittable& world, int depth) {
     vec3 unit_dir = unit_vector(r.direction());
     double t = 0.5 * (unit_dir.y() + 1.0);
     return (1.0 - t) * color(1.0, 1.0, 1.0) + t * color(0.5, 0.7, 1.0);
+}
+
+void write_rgbe(std::ofstream& out, float r, float g, float b) {
+    float v = std::max({r, g, b});
+    if (v < 1e-32f) {
+        out.put(0); out.put(0); out.put(0); out.put(0);
+        return;
+    }
+    int e;
+    float m = std::frexp(v, &e) * 256.0f / v;
+    out.put(static_cast<unsigned char>(r * m));
+    out.put(static_cast<unsigned char>(g * m));
+    out.put(static_cast<unsigned char>(b * m));
+    out.put(static_cast<unsigned char>(e + 128));
 }
 
 int main() {
@@ -144,5 +159,15 @@ int main() {
             write_color(std::cout, framebuffer[j][i], samples_per_pixel);
         }
     }
+    std::ofstream hdrfile("output.hdr", std::ios::binary);
+    hdrfile << "#?RADIANCE\nFORMAT=32-bit_rle_rgbe\n\n-Y " << image_height << " +X " << image_width << "\n";
+
+    for (int j = image_height - 1; j >= 0; --j) {
+        for (int i = 0; i < image_width; ++i) {
+            color c = framebuffer[j][i] / static_cast<float>(samples_per_pixel);
+            write_rgbe(hdrfile, c.x(), c.y(), c.z());
+        }
+    }
+    hdrfile.close();
     std::cerr << "\nDone.\n";
 }
