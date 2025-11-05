@@ -102,8 +102,8 @@ int main() {
         ));
     }    
 
-    auto light_mat = std::make_shared<emissive>(color(4, 4, 4)); 
-    world.add(std::make_shared<sphere>(point3(0, 2, 0), 0.5, light_mat)); 
+    auto light_mat = std::make_shared<emissive>(color(8, 8, 8));
+    world.add(std::make_shared<sphere>(point3(0, 3, -1), 0.5, light_mat));
 
     auto moving_mat = std::make_shared<lambertian>(color(0.7, 0.3, 0.3));
     world.add(std::make_shared<moving_sphere>(
@@ -148,25 +148,46 @@ int main() {
     std::vector<std::vector<color>> framebuffer(image_height, std::vector<color>(image_width));
     std::cout << "P3\n" << image_width << " " << image_height << "\n255\n";
 
-#pragma omp parallel for schedule(dynamic)
+    std::vector<std::vector<int>> sample_counts(image_height, std::vector<int>(image_width, 0));
+    const int min_samples = 30;
+    const double variance_threshold = 0.001;
+
+    #pragma omp parallel for schedule(dynamic)
     for (int j = image_height - 1; j >= 0; --j) {
-#pragma omp critical
+    #pragma omp critical
         std::cerr << "\rScanlines remaining: " << j << " " << std::flush;
         for (int i = 0; i < image_width; ++i) {
             color pixel_color(0, 0, 0);
+            double sum_r_sq = 0, sum_g_sq = 0, sum_b_sq = 0;
             for (int s = 0; s < samples_per_pixel; ++s) {
                 double u = (i + random_double()) / (image_width - 1);
                 double v = (j + random_double()) / (image_height - 1);
                 ray r = cam.get_ray(u, v);
-                pixel_color += ray_color(r, bvh_tree, max_depth);
+                color sample = ray_color(r, bvh_tree, max_depth);
+                pixel_color += sample;
+                sum_r_sq += sample.x() * sample.x();
+                sum_g_sq += sample.y() * sample.y();
+                sum_b_sq += sample.z() * sample.z();
+                sample_counts[j][i]++;
+                if (s >= 30 && s % 10 == 0) {
+                    double n = s + 1;
+                    color mean = pixel_color / n;
+                    double var_r = (sum_r_sq / n) - mean.x() * mean.x();
+                    double var_g = (sum_g_sq / n) - mean.y() * mean.y();
+                    double var_b = (sum_b_sq / n) - mean.z() * mean.z();
+                    double max_std = std::sqrt(std::max({var_r, var_g, var_b}));
+                    if (max_std / std::sqrt(n) < 0.001) {
+                        break;
+                    }
+                }
             }
-            framebuffer[j][i] = pixel_color; 
+            framebuffer[j][i] = pixel_color;
         }
-    }
+    }    
 
     for (int j = image_height - 1; j >= 0; --j) {
         for (int i = 0; i < image_width; ++i) {
-            write_color(std::cout, framebuffer[j][i], samples_per_pixel);
+            write_color(std::cout, framebuffer[j][i], sample_counts[j][i]);
         }
     }
     std::ofstream hdrfile("output.hdr", std::ios::binary);
@@ -174,7 +195,7 @@ int main() {
 
     for (int j = image_height - 1; j >= 0; --j) {
         for (int i = 0; i < image_width; ++i) {
-            color c = framebuffer[j][i] / static_cast<float>(samples_per_pixel);
+            color c = framebuffer[j][i] / static_cast<float>(sample_counts[j][i]);
             write_rgbe(hdrfile, c.x(), c.y(), c.z());
         }
     }
