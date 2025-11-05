@@ -27,6 +27,7 @@
 #include "perlin.h"
 #include "noise_texture.h"
 #include "quad.h"
+#include "translate.h"
 
 color ray_color(const ray& r, const hittable& world, int depth) {
     hit_record rec;
@@ -125,12 +126,21 @@ int main() {
         2
     ));
 
+    auto instanced_mat = std::make_shared<lambertian>(color(0.2, 0.8, 0.2));
+    auto instanced_sphere = std::make_shared<sphere>(point3(0, 0.5, -2), 0.3, instanced_mat);
+
+    world.add(instanced_sphere);
+
+    world.add(std::make_shared<translate>(instanced_sphere, vec3(1, 0, 0)));
+    world.add(std::make_shared<translate>(instanced_sphere, vec3(-1, 0, 0)));
+    world.add(std::make_shared<translate>(instanced_sphere, vec3(0, 1, 0)));
+
     bvh_node bvh_tree(world);
 
     point3 lookfrom(3, 3, 2);
     point3 lookat(0, 0, -1);
     vec3 vup(0, 1, 0);
-    double vfov = 20.0;
+    double vfov = 40.0;
     double dist_to_focus = 3.7;
     double aperture = 0.05;
     camera cam(lookfrom, lookat, vup, vfov, aspect_ratio, aperture, dist_to_focus);       
