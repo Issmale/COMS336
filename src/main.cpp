@@ -45,33 +45,41 @@ color ray_color(const ray& r, const hittable& world, const point3& light_pos, do
     ray scattered;
     color attenuation;
     color emitted = rec.mat_ptr->emitted();
-
-    if (!rec.mat_ptr->scatter(r, rec, attenuation, scattered))
-        return emitted;
-
-    vec3 to_light = light_pos - rec.p;
-    double distance_to_light_sq = to_light.length_squared();
-    vec3 light_dir = unit_vector(to_light);
-    vec3 random_in_light_sphere = light_radius * random_unit_vector();
-    vec3 light_sample_pos = light_pos + random_in_light_sphere;
-    vec3 to_light_sample = light_sample_pos - rec.p;
-    double dist_to_sample = to_light_sample.length();
-    vec3 shadow_dir = unit_vector(to_light_sample);
-    ray shadow_ray(rec.p + rec.normal * 0.001, shadow_dir);
-    hit_record shadow_rec;
-    color direct_light(0, 0, 0);
-    bool hit_before_light = world.hit(shadow_ray, 0.001, dist_to_sample - 0.001, shadow_rec);
     
-    if (!hit_before_light) {
-        double cos_theta = std::max(0.0, dot(rec.normal, shadow_dir));
-        if (cos_theta > 0) {
-            double light_area = 4.0 * pi * light_radius * light_radius;
-            double solid_angle = light_area / distance_to_light_sq;
-            direct_light = attenuation * color(8, 8, 8) * cos_theta * solid_angle * 0.5;
+    bool did_scatter = rec.mat_ptr->scatter(r, rec, attenuation, scattered);
+    
+    if (!did_scatter) {
+        return emitted;
+    }
+    
+    color direct_light(0, 0, 0);
+    bool is_volume = (rec.normal.x() == 1.0 && rec.normal.y() == 0.0 && rec.normal.z() == 0.0);
+    
+    if (!is_volume) {
+        vec3 random_in_light_sphere = light_radius * random_unit_vector();
+        vec3 light_sample_pos = light_pos + random_in_light_sphere;
+        vec3 to_light_sample = light_sample_pos - rec.p;
+        double dist_to_sample = to_light_sample.length();
+        vec3 shadow_dir = unit_vector(to_light_sample);
+        ray shadow_ray(rec.p + rec.normal * 0.001, shadow_dir);
+        hit_record shadow_rec;
+        
+        bool hit_before_light = world.hit(shadow_ray, 0.001, dist_to_sample - 0.001, shadow_rec);
+        
+        if (!hit_before_light) {
+            double cos_theta = std::max(0.0, dot(rec.normal, shadow_dir));
+            if (cos_theta > 0) {
+                vec3 to_light = light_pos - rec.p;
+                double distance_to_light_sq = to_light.length_squared();
+                double light_area = 4.0 * pi * light_radius * light_radius;
+                double solid_angle = light_area / distance_to_light_sq;
+                direct_light = attenuation * color(8, 8, 8) * cos_theta * solid_angle;
+            }
         }
     }
-
-    color indirect_light = attenuation * ray_color(scattered, world, light_pos, light_radius, depth - 1) * 0.5;
+    
+    color indirect_light = attenuation * ray_color(scattered, world, light_pos, light_radius, depth - 1);
+    
     return emitted + direct_light + indirect_light;
 }
 
@@ -91,11 +99,11 @@ void write_rgbe(std::ofstream& out, float r, float g, float b) {
 
 int main() {
     const double aspect_ratio = 16.0 / 9.0;
-    const int image_width = 400;
-    // const int image_width = 1200;
+    // const int image_width = 400;
+    const int image_width = 1200;
     const int image_height = static_cast<int>(image_width / aspect_ratio);
-    const int samples_per_pixel = 100;
-    // const int samples_per_pixel = 500;
+    // const int samples_per_pixel = 100;
+    const int samples_per_pixel = 500;
     const int max_depth = 50;
 
     auto wood_tex = std::make_shared<image_texture>("../src/wood.jpg");
@@ -165,7 +173,7 @@ int main() {
     world.add(std::make_shared<translate>(instanced_sphere, vec3(0, 1, 0)));
 
     auto fog_boundary = std::make_shared<sphere>(point3(-1.5, 0.5, -1.5), 0.8, nullptr);
-    auto fog = std::make_shared<constant_medium>(fog_boundary, 0.5, color(0.8, 0.8, 0.9));
+    auto fog = std::make_shared<constant_medium>(fog_boundary, 0.1, color(0.8, 0.8, 0.9));
     world.add(fog);
 
     bvh_node bvh_tree(world);
@@ -175,8 +183,8 @@ int main() {
     vec3 vup(0, 1, 0);
     double vfov = 40.0;
     double dist_to_focus = 3.7;
-    double aperture = 0.05;
-    // double aperture = 0;
+    // double aperture = 0.05;
+    double aperture = 0;
     camera cam(lookfrom, lookat, vup, vfov, aspect_ratio, aperture, dist_to_focus);       
 
     std::vector<std::vector<color>> framebuffer(image_height, std::vector<color>(image_width));
