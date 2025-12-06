@@ -145,7 +145,7 @@ int main() {
     auto moving_mat = std::make_shared<lambertian>(color(0.7, 0.3, 0.3));
     world.add(std::make_shared<moving_sphere>(
         point3(-0.5, 0.5, -1.0),
-        point3(0.5, 0.5, -1.0),
+        point3( 0.5, 0.5, -1.0),
         0.0, 1.0,
         0.25,
         moving_mat
@@ -173,7 +173,7 @@ int main() {
     world.add(std::make_shared<translate>(instanced_sphere, vec3(0, 1, 0)));
 
     auto fog_boundary = std::make_shared<sphere>(point3(-1.5, 0.5, -1.5), 0.8, nullptr);
-    auto fog = std::make_shared<constant_medium>(fog_boundary, 0.1, color(0.8, 0.8, 0.9));
+    auto fog = std::make_shared<constant_medium>(fog_boundary, 0.15, color(0.88, 0.88, 0.95));
     world.add(fog);
 
     bvh_node bvh_tree(world);
@@ -182,10 +182,9 @@ int main() {
     point3 lookat(0, 0, -1);
     vec3 vup(0, 1, 0);
     double vfov = 40.0;
-    double dist_to_focus = 3.7;
-    // double aperture = 0.05;
-    double aperture = 0;
-    camera cam(lookfrom, lookat, vup, vfov, aspect_ratio, aperture, dist_to_focus);       
+    double dist_to_focus = (lookfrom - lookat).length();
+    double aperture = 0.05;
+    camera cam(lookfrom, lookat, vup, vfov, aspect_ratio, aperture, dist_to_focus);      
 
     std::vector<std::vector<color>> framebuffer(image_height, std::vector<color>(image_width));
     std::cout << "P3\n" << image_width << " " << image_height << "\n255\n";
